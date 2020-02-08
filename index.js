@@ -93,58 +93,38 @@
         // Users interation
         filterData()
 
-        let newData = data
-        let dropdown, userSelect
-        let gen, len;
+        let dropdown, userSelect;
+        let len = "All";
+        let gen = "All";
 
-        d3.select('#lenFilter').on("change", function(d) {
+        d3.select('#lenFilter').on("change", function (d) {
             // Getting user's inputs
             dropdown = document.getElementById("len-dropdown");
             userSelect = dropdown.options[dropdown.selectedIndex].value;
-            
-            // Filtering data
-            if (userSelect != 'All') {
-                newData = data.filter(function(d) {
-                    return d['Legendary'] == userSelect
-                });
-            } else {
-                newData = data
-            }
 
-            // Delete old plot
+            // Updating lengendary
+            len = userSelect
+
+            // Delete old plot and update new plot
             d3.selectAll("svg > *").remove();
-
-            // Update new plot
-            drawAxes(scaleX, scaleY)
-            plotData(newData, scaleX, scaleY)
+            plotData(scaleX, scaleY, len, gen)
         });
 
-        d3.select('#genFilter').on("change", function(d) {
+        d3.select('#genFilter').on("change", function (d) {
             // Getting user's inputs
             dropdown = document.getElementById("gen-dropdown");
             userSelect = dropdown.options[dropdown.selectedIndex].value;
 
-            // Filtering data
-            if (userSelect != 'All') {
-                newData = data.filter(function(d) {
-                    return d['Generation'] == userSelect
-                });
-            } else {
-                newData = data
-            }
+            // Updating generation
+            gen = userSelect
 
-            // Delete old plot
+            // Delete old plot and update new plot
             d3.selectAll("svg > *").remove();
-
-            // Update new plot
-            drawAxes(scaleX, scaleY)
-            plotData(newData, scaleX, scaleY)
+            plotData(scaleX, scaleY, len, gen)
         });
 
         // Creating 1st scatter plot
-        drawAxes(scaleX, scaleY)
-        plotData(newData, scaleX, scaleY)
-
+        plotData(scaleX, scaleY, len, gen)
     }
 
 
@@ -195,7 +175,7 @@
             .attr('id', 'len-option')
             .attr("value", function (d) { return d; })
             .html(function (d) { return d })
-  
+
         d3.select('#genFilter')
             .append('select')
             .attr('id', 'gen-dropdown')
@@ -205,33 +185,35 @@
             .append('option')
             .attr('id', 'gen-option')
             .attr('value', function (d) { return d })
-            .html(function (d) { return d }) 
+            .html(function (d) { return d })
     }
 
+
+    // Helper function for filtering data based on user's inputs
     function updateData(len, gen) {
-        newData.filter(function(d) {
-            return d.Legendary == len && d.Generation == gen
-        });
+        let newData;
+        if (len == "All" && gen != "All") {
+            newData = data.filter(function (d) { return d.Generation == gen });
+        } else if (gen == "All" && len != "All") {
+            newData = data.filter(function (d) { return d.Legendary == len });
+        } else if (len != "All" && gen != "All") {
+            newData = data.filter(function (d) { return d.Legendary == len && d.Generation == gen });
+        } else {
+            newData = data
+        }
+        return newData
     }
-
-    
-    let firstArray = []
 
 
     // Helper function for makeScatterPlot(): Making a plot
-    function plotData(newData, scaleX, scaleY) {
+    function plotData(scaleX, scaleY, len, gen) {
         const xMap = function (d) { return scaleX(+d["Sp. Def"]) }
         const yMap = function (d) { return scaleY(+d["Total"]) }
         const type1Color = function (d) { return colors[d["Type 1"]] }
-        const type1 = function (d) {
-            if (!firstArray.includes(d["Type 1"])) {
-                firstArray.push(d["Type 1"])
-            }
-            
-            return d["Type 1"]
-        }
+        const type1 = function (d) { return d["Type 1"] }
 
-
+        // Creating x and y axes
+        drawAxes(scaleX, scaleY)
 
         // Making tooltips
         let div = d3.select("body").append("div")
@@ -247,7 +229,7 @@
 
         // Ploting data and pop-up tooltips
         const circles = svgContainer.selectAll(".circle")
-            .data(newData)
+            .data(updateData(len, gen))
             .enter()
             .append('circle')
             .attr('cx', xMap)
@@ -274,9 +256,18 @@
             });
 
 
+        // Creating unique array of type 1 and filtering rows based on unique array of type 1 in data
+        let uniqueType1 = [...new Set(updateData(len, gen).map(function (d) {
+            return d["Type 1"]
+        }))];
+
+        let uniqueData = uniqueType1.map(function (d) {
+            return data.find(function (t) { return t["Type 1"] === d })
+        });
+
         // Making legend of plot
         var legend = svgContainer.selectAll(".legend")
-            .data(newData)
+            .data(uniqueData)
             .enter()
             .append("g")
             .attr("class", "legend")
@@ -297,7 +288,6 @@
             .attr("dy", ".35em")
             .style("text-anchor", "start")
             .text(type1)
-
     }
 
 })()
