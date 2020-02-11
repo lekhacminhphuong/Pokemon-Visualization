@@ -3,7 +3,7 @@
 
 ![Home Page 1](./readme.png)
 
-Click [me](https://lekhacminhphuong.github.io/Pokemon-Visualization/) to visit _The Secret_
+Click [me](https://lekhacminhphuong.github.io/Pokemon-Visualization/) to visit _Pokemon Visualization_
 
 ## Development
 - Utilized D3.js to build interactive Pokemon data visualization.
